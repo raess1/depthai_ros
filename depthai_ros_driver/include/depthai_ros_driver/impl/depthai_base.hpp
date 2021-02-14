@@ -89,8 +89,11 @@ void DepthAIBase<Node>::publishImageMsg(const HostDataPacket& packet, Stream typ
     auto* data = const_cast<uint8_t*>(packet.getData());
 
     switch (type) {
+        case Stream::COLOR:
         case Stream::LEFT:
         case Stream::RIGHT:
+        case Stream::RECTIFIED_LEFT:
+        case Stream::RECTIFIED_RIGHT:
         case Stream::DISPARITY:
             cvImg.image = cv::Mat(rows, cols, CV_8UC1, data);
             encoding = "mono8";
@@ -102,11 +105,11 @@ void DepthAIBase<Node>::publishImageMsg(const HostDataPacket& packet, Stream typ
                 toMerge[i] = cv::Mat(cols, cols, CV_8UC1, data + i * offset);
             }
             cv::merge(toMerge, cvImg.image);
-            encoding = "bgr8";
+            encoding = "rgb8";
             break;
         }
         case Stream::JPEG_OUT:
-        case Stream::VIDEO: {
+        case Stream::VIDEO:  {
             const auto img = boost::make_shared<sensor_msgs::CompressedImage>();
             img->header = std::move(cvImg.header);
             img->format = "jpeg";
@@ -129,7 +132,7 @@ void DepthAIBase<Node>::publishImageMsg(const HostDataPacket& packet, Stream typ
                     cv::applyColorMap(monoImg, bgrImg, cv::COLORMAP_HOT);
                     // cv::applyColorMap(monoImg, bgrImg, cv::COLORMAP_JET);
                     cvImg.image = bgrImg;
-                    encoding = "bgr8";
+                    encoding = "16UC1";
                 }
             } else {  // disparity_color
                 cvImg.image = cv::Mat(rows, cols, CV_8UC3, data);
